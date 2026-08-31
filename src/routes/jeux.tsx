@@ -80,8 +80,8 @@ function GamesPage() {
                 height={576}
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
-              <span className="absolute left-3 top-3 rounded-full bg-background/70 px-3 py-1 text-2xl backdrop-blur">
-                {g.emoji}
+              <span className="absolute left-3 top-3 rounded-full bg-background/70 px-3 py-1 font-mono text-xs uppercase tracking-widest backdrop-blur">
+                {g.kind}
               </span>
             </div>
             <div className="p-5">
