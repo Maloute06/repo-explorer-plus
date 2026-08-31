@@ -1,0 +1,100 @@
+import { useMemo } from "react";
+import {
+  lastStandingRanking,
+  makeRng,
+  pickDuration,
+  type MiniGameProps,
+} from "@/lib/game-utils";
+import { useClock, useFinishAt } from "@/lib/use-clock";
+import { Avatar } from "@/components/PlayerChip";
+import { CrowdNote } from "./CrowdNote";
+
+const SHOWN = 10;
+const ROUND = 6.2;
+
+interface Round {
+  picks: Record<string, number>;
+  safe: number;
+  eliminated: string[];
+  survivors: string[];
+}
+
+export function HundredDoorsGame({ players, seed, onFinish }: MiniGameProps) {
+  const sim = useMemo(() => {
+    const rng = makeRng(seed + 505);
+    const duration = pickDuration(rng, 45, 75, players.length);
+    let alive = [...players];
+    const rounds: Round[] = [];
+    const dumped: string[] = [];
+    const maxRounds = Math.max(3, Math.min(12, Math.floor(duration / ROUND) - 1));
+
+    while (alive.length > 1 && rounds.length < maxRounds) {
+      const picks: Record<string, number> = {};
+      alive.forEach((n) => (picks[n] = Math.floor(rng() * SHOWN)));
+      const safe = Math.floor(rng() * SHOWN);
+      let eliminated = alive.filter((n) => picks[n] !== safe);
+      if (eliminated.length >= alive.length) eliminated = eliminated.slice(1);
+      const survivors = alive.filter((n) => !eliminated.includes(n));
+      eliminated.forEach((n) => dumped.push(n));
+      rounds.push({ picks, safe, eliminated, survivors });
+      alive = survivors;
+    }
+
+    return {
+      rounds,
+      duration: Math.max(duration, rounds.length * ROUND + 2.4),
+      ranking: lastStandingRanking(alive, dumped),
+    };
+  }, [players, seed]);
+
+  const t = useClock();
+  useFinishAt(t, sim.duration, () => onFinish(sim.ranking));
+  const index = Math.min(Math.floor(t / ROUND), sim.rounds.length - 1);
+  const round = sim.rounds[index]!;
+  const revealed = t - index * ROUND > 3.1;
+
+  return (
+    <div className="panel p-4 sm:p-6">
+      <div className="mb-4 flex items-center justify-between">
+        <span className="tag">
+          Manche {index + 1} / {sim.rounds.length} · 1 porte sur 100
+        </span>
+        <span className="font-mono text-xs text-muted-foreground">
+          {revealed ? "Ouverture…" : "Choix instinctif"}
+        </span>
+      </div>
+      <div className="grid grid-cols-5 gap-2 sm:grid-cols-10">
+        {Array.from({ length: SHOWN }).map((_, d) => {
+          const names = Object.keys(round.picks).filter((n) => round.picks[n] === d);
+          const isSafe = revealed && round.safe === d;
+          const isTrap = revealed && round.safe !== d;
+          return (
+            <div
+              key={d}
+              className="rounded-lg border border-border p-1.5"
+              style={{
+                background: isSafe
+                  ? "oklch(0.633 0.079 115.2 / 28%)"
+                  : isTrap
+                    ? "oklch(0.577 0.245 27.3 / 22%)"
+                    : "oklch(0.164 0.016 210.9 / 70%)",
+              }}
+            >
+              <div className="text-center text-lg">{revealed ? (isSafe ? "✨" : "🚫") : "🚪"}</div>
+              <div className="mt-1 flex flex-wrap justify-center gap-0.5">
+                {names.slice(0, 6).map((n) => (
+                  <Avatar key={n} name={n} size={16} dimmed={isTrap} />
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <CrowdNote total={players.length} shown={players.length}>
+        {revealed && round.eliminated.length
+          ? `Piège : ${round.eliminated.length} éliminés. La porte ${round.safe + 1} menait plus loin.`
+          : "Aucune stratégie : juste l'instinct, ou la chance."}
+      </CrowdNote>
+    </div>
+  );
+}
