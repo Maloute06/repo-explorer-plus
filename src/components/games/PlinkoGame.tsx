@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { clamp, makeRng, type MiniGameProps } from "@/lib/game-utils";
 import { useClock, useFinishAt } from "@/lib/use-clock";
-import { Avatar } from "@/components/PlayerChip";
+import { GameStage, Hud, Runner } from "./GameStage";
+import { imgPlinko } from "./images";
 
 const ROWS = 10;
 const MULTIPLIERS = [1.5, 2, 3.5, 7, 12, 7, 3.5, 2, 1.5];
@@ -29,54 +30,83 @@ export function PlinkoGame({ players, seed, onFinish }: MiniGameProps) {
   const t = useClock();
   useFinishAt(t, sim.duration, () => onFinish(sim.ranking));
 
+  const landed = sim.balls.filter((b) => t >= b.delay + b.fall).length;
+  const best = [...sim.balls]
+    .filter((b) => t >= b.delay + b.fall)
+    .sort((a, b) => b.score - a.score)[0];
+
   return (
-    <div className="panel p-4 sm:p-6">
-      <div className="relative aspect-4/3 w-full overflow-hidden rounded-xl border border-border bg-background/70">
-        {Array.from({ length: ROWS }).map((_, r) => (
-          <div
-            key={r}
-            className="absolute flex w-full justify-center gap-[3.2%]"
-            style={{ top: `${((r + 0.7) / (ROWS + 2)) * 100}%` }}
-          >
-            {Array.from({ length: r % 2 === 0 ? 8 : 9 }).map((_, c) => (
-              <span key={c} className="size-1.5 rounded-full bg-primary/60" />
-            ))}
-          </div>
-        ))}
-
-        {sim.balls.map((ball) => {
-          const local = clamp((t - ball.delay) / ball.fall, 0, 1);
-          if (t < ball.delay) return null;
-          const row = local * ROWS;
-          const i = Math.floor(row);
-          const frac = row - i;
-          const x = ball.path[i]! + (ball.path[Math.min(i + 1, ROWS)]! - ball.path[i]!) * frac;
-          return (
-            <div
-              key={ball.name}
-              className="absolute -translate-x-1/2 -translate-y-1/2"
-              style={{ left: `${x * 100}%`, top: `${(local * ROWS + 0.4) / (ROWS + 2) * 100}%` }}
-            >
-              <Avatar name={ball.name} size={24} />
-            </div>
-          );
-        })}
-
-        <div className="absolute inset-x-0 bottom-0 flex">
-          {MULTIPLIERS.map((m, i) => (
-            <div
-              key={i}
-              className="flex-1 border-t border-border py-1 text-center font-mono text-[10px] sm:text-xs"
-              style={{ background: `oklch(0.37 0.083 320 / ${0.2 + (m / 12) * 0.6})` }}
-            >
-              x{m}
-            </div>
+    <GameStage
+      image={imgPlinko}
+      title="Plinko"
+      subtitle="Chute libre · multiplicateurs x1.5 → x12"
+      aspect="4/3"
+      status={
+        <>
+          <Hud tone="live">{landed}/{players.length} arrivées</Hud>
+          {best && <Hud tone="gold">🥇 {best.name}</Hud>}
+        </>
+      }
+      caption="Chaque viewer est une bille. Le multiplicateur touché détermine son score."
+    >
+      {Array.from({ length: ROWS }).map((_, r) => (
+        <div
+          key={r}
+          className="absolute flex w-full justify-center gap-[3.2%]"
+          style={{ top: `${((r + 0.7) / (ROWS + 2)) * 100}%` }}
+        >
+          {Array.from({ length: r % 2 === 0 ? 8 : 9 }).map((_, c) => (
+            <span
+              key={c}
+              className="size-2 rounded-full"
+              style={{
+                background: "var(--color-primary)",
+                boxShadow: "0 0 10px oklch(0.743 0.085 116.6 / 80%)",
+                opacity: 0.65 + 0.35 * Math.abs(Math.sin(t * 1.6 + r + c)),
+              }}
+            />
           ))}
         </div>
+      ))}
+
+      {sim.balls.map((ball) => {
+        const local = clamp((t - ball.delay) / ball.fall, 0, 1);
+        if (t < ball.delay) return null;
+        const row = local * ROWS;
+        const i = Math.floor(row);
+        const frac = row - i;
+        const x = ball.path[i]! + (ball.path[Math.min(i + 1, ROWS)]! - ball.path[i]!) * frac;
+        const done = local >= 1;
+        return (
+          <div
+            key={ball.name}
+            className="absolute z-10 -translate-x-1/2 -translate-y-1/2"
+            style={{
+              left: `${x * 100}%`,
+              top: `${((local * ROWS + 0.4) / (ROWS + 2)) * 100}%`,
+              transition: "left 0.08s linear",
+            }}
+          >
+            <Runner name={ball.name} size={24} lead={done && ball.slot === 4} />
+          </div>
+        );
+      })}
+
+      <div className="absolute inset-x-0 bottom-0 z-10 flex">
+        {MULTIPLIERS.map((m, i) => (
+          <div
+            key={i}
+            className="flex-1 border-t border-border/70 py-1.5 text-center font-mono text-[10px] font-bold sm:text-xs"
+            style={{
+              background: `linear-gradient(0deg, oklch(0.828 0.14 88 / ${0.1 + (m / 12) * 0.55}), transparent)`,
+              color: m >= 7 ? "var(--color-gold)" : "var(--color-foreground)",
+              textShadow: m >= 7 ? "0 0 14px oklch(0.828 0.14 88 / 80%)" : undefined,
+            }}
+          >
+            x{m}
+          </div>
+        ))}
       </div>
-      <p className="mt-3 text-center text-sm text-muted-foreground">
-        Chaque viewer est une bille. Le multiplicateur touché détermine son score.
-      </p>
-    </div>
+    </GameStage>
   );
 }
