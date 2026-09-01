@@ -9,8 +9,8 @@ import {
   type MiniGameProps,
 } from "@/lib/game-utils";
 import { useClock, useFinishAt } from "@/lib/use-clock";
-import { Avatar } from "@/components/PlayerChip";
-import { CrowdNote } from "./CrowdNote";
+import { GameStage, Hud, Runner } from "./GameStage";
+import { imgTornado } from "./images";
 
 export function TornadoGame({ players, seed, onFinish }: MiniGameProps) {
   const sim = useMemo(() => {
@@ -43,48 +43,68 @@ export function TornadoGame({ players, seed, onFinish }: MiniGameProps) {
   const dead = new Set(sim.units.filter((u) => t >= u.death).map((u) => u.name));
 
   return (
-    <div className="panel p-4 sm:p-6">
-      <div className="mb-3 flex items-center justify-between">
-        <span className="tag">Ne reste pas immobile</span>
-        <span className="font-mono text-xs text-muted-foreground">
-          {players.length - dead.size} encore debout
-        </span>
-      </div>
-      <div className="relative aspect-4/3 w-full overflow-hidden rounded-xl border border-border bg-background/70">
+    <GameStage
+      image={imgTornado}
+      title="Tornado"
+      subtitle="Ne reste jamais immobile"
+      aspect="4/3"
+      shake
+      status={
+        <>
+          <Hud tone="live">{players.length - dead.size} debout</Hud>
+          <Hud tone="danger">{dead.size} aspirés</Hud>
+        </>
+      }
+      caption="La tornade se déplace et aspire tout sur son passage. Le dernier debout gagne."
+    >
+      {[0, 1, 2].map((i) => (
         <div
-          className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
+          key={i}
+          className="absolute -translate-x-1/2 -translate-y-1/2 animate-spin-slow rounded-full border border-primary/30"
           style={{
             left: `${tx * 100}%`,
             top: `${ty * 100}%`,
-            width: "28%",
-            height: "28%",
-            background:
-              "radial-gradient(circle, oklch(0.743 0.045 118 / 55%), oklch(0.371 0.083 320 / 15%) 55%, transparent 70%)",
-            boxShadow: "0 0 50px oklch(0.371 0.083 320 / 45%)",
+            width: `${20 + i * 14}%`,
+            height: `${20 + i * 14}%`,
+            animationDuration: `${3 + i}s`,
           }}
         />
-        {sim.visual.map((u) => {
-          const out = dead.has(u.name);
-          let x = clamp(u.x + Math.sin(t * u.wander + u.phase) * 0.28, 0.04, 0.96);
-          let y = clamp(u.y + Math.cos(t * u.wander * 1.1 + u.phase) * 0.24, 0.04, 0.96);
-          if (out) {
-            x += (tx - x) * 0.7;
-            y += (ty - y) * 0.7;
-          }
-          return (
-            <div
-              key={u.name}
-              className="absolute -translate-x-1/2 -translate-y-1/2"
-              style={{ left: `${x * 100}%`, top: `${y * 100}%`, opacity: out ? 0.25 : 1 }}
-            >
-              <Avatar name={u.name} size={22} dimmed={out} />
-            </div>
-          );
-        })}
-      </div>
-      <CrowdNote total={players.length} shown={sim.visual.length}>
-        La tornade se déplace et aspire tout sur son passage.
-      </CrowdNote>
-    </div>
+      ))}
+      <div
+        className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
+        style={{
+          left: `${tx * 100}%`,
+          top: `${ty * 100}%`,
+          width: "30%",
+          height: "30%",
+          background:
+            "radial-gradient(circle, oklch(0.95 0.02 118 / 75%), oklch(0.371 0.083 320 / 30%) 55%, transparent 72%)",
+          boxShadow: "0 0 90px oklch(0.371 0.083 320 / 65%)",
+        }}
+      />
+      {sim.visual.map((u) => {
+        const out = dead.has(u.name);
+        let x = clamp(u.x + Math.sin(t * u.wander + u.phase) * 0.28, 0.04, 0.96);
+        let y = clamp(u.y + Math.cos(t * u.wander * 1.1 + u.phase) * 0.24, 0.04, 0.96);
+        if (out) {
+          x += (tx - x) * 0.7;
+          y += (ty - y) * 0.7;
+        }
+        return (
+          <div
+            key={u.name}
+            className="absolute z-10 -translate-x-1/2 -translate-y-1/2"
+            style={{
+              left: `${x * 100}%`,
+              top: `${y * 100}%`,
+              transform: out ? `translate(-50%,-50%) rotate(${t * 320}deg) scale(0.75)` : undefined,
+              transition: "left 0.12s linear, top 0.12s linear",
+            }}
+          >
+            <Runner name={u.name} size={22} dead={out} trail={out ? 0 : 10} />
+          </div>
+        );
+      })}
+    </GameStage>
   );
 }

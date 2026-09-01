@@ -8,8 +8,8 @@ import {
   type MiniGameProps,
 } from "@/lib/game-utils";
 import { useClock, useFinishAt } from "@/lib/use-clock";
-import { Avatar } from "@/components/PlayerChip";
-import { CrowdNote } from "./CrowdNote";
+import { GameStage, Hud, Runner } from "./GameStage";
+import { imgTrainSwitch } from "./images";
 
 const RAILS = 4;
 
@@ -49,23 +49,44 @@ export function TrainSwitchGame({ players, seed, onFinish }: MiniGameProps) {
   const t = useClock();
   useFinishAt(t, sim.duration, () => onFinish(sim.ranking));
   const progress = clamp(t / sim.duration, 0, 1);
+  const crashed = sim.trains.filter((tr) => t >= tr.dieAt).length;
 
   return (
-    <div className="panel p-4 sm:p-6">
-      <div className="mb-3 flex items-center justify-between">
-        <span className="tag">Aiguillages</span>
-        <span className="font-mono text-xs text-muted-foreground">{Math.round(progress * 100)}%</span>
-      </div>
-      <div className="space-y-3">
+    <GameStage
+      image={imgTrainSwitch}
+      title="Train Switch"
+      subtitle="Aiguillages · un mauvais rail et c'est fini"
+      minHeight={330}
+      aspect="auto"
+      status={
+        <>
+          <Hud tone="live">{Math.round(progress * 100)}%</Hud>
+          <Hud tone="danger">{crashed} déraillés</Hud>
+        </>
+      }
+      caption="Les rails changent sans prévenir. Les survivants s'affrontent à l'arrivée."
+    >
+      <div className="absolute inset-0 flex flex-col justify-center gap-3 p-3">
         {Array.from({ length: RAILS }).map((_, rail) => (
           <div
             key={rail}
-            className="relative h-14 overflow-hidden rounded-lg border border-border bg-background/60"
+            className="relative h-14 overflow-hidden rounded-lg border border-border/70 bg-background/45"
           >
-            <div className="absolute inset-y-3 inset-x-2 border-y border-dashed border-primary/30" />
+            <div className="absolute inset-y-3 inset-x-2 border-y-2 border-dashed border-primary/35" />
+            <div
+              className="absolute inset-y-0 w-24"
+              style={{
+                left: `${((t * 34 + rail * 25) % 130) - 15}%`,
+                background:
+                  "linear-gradient(90deg, transparent, oklch(0.828 0.14 88 / 22%), transparent)",
+              }}
+            />
             <div
               className="absolute top-1/2 h-0.5 w-10 -translate-y-1/2 bg-gold"
-              style={{ left: `${18 + ((rail + Math.floor(t * 2)) % 3) * 22}%` }}
+              style={{
+                left: `${18 + ((rail + Math.floor(t * 2)) % 3) * 22}%`,
+                boxShadow: "0 0 16px oklch(0.828 0.14 88 / 80%)",
+              }}
             />
             {sim.visual
               .filter((tr) => tr.rail === rail)
@@ -75,23 +96,21 @@ export function TrainSwitchGame({ players, seed, onFinish }: MiniGameProps) {
                 return (
                   <div
                     key={tr.name}
-                    className="absolute top-1/2 -translate-y-1/2"
+                    className="absolute z-10"
                     style={{
                       left: `${dead ? p * 40 : p * 86}%`,
                       top: dead ? "120%" : "50%",
-                      opacity: dead ? 0.35 : 1,
+                      transform: "translateY(-50%)",
+                      transition: "top 0.4s ease",
                     }}
                   >
-                    <Avatar name={tr.name} size={24} dimmed={dead} />
+                    <Runner name={tr.name} size={24} dead={dead} trail={dead ? 0 : 22} lead={p > 0.92} />
                   </div>
                 );
               })}
           </div>
         ))}
       </div>
-      <CrowdNote total={players.length} shown={sim.visual.length}>
-        Les rails changent sans prévenir. Un mauvais aiguillage et c'est terminé.
-      </CrowdNote>
-    </div>
+    </GameStage>
   );
 }

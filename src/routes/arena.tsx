@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from "react";
 import { MINI_GAMES, pickRandomGame, type MiniGameEntry } from "@/components/games/registry";
 import { PlayerChip } from "@/components/PlayerChip";
 import { useTwitchChat } from "@/lib/twitch-chat";
+import { GAME_IMAGES } from "@/components/games/images";
 
 export const Route = createFileRoute("/arena")({
   head: () => ({
@@ -192,17 +193,40 @@ function Arena() {
               </button>
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-2">
-              {MINI_GAMES.map((g) => (
-                <button
-                  key={g.id}
-                  className="tag hover:text-foreground"
-                  disabled={participants.length < 2}
-                  onClick={() => start(g)}
-                >
-                  {g.emoji} forcer {g.name}
-                </button>
-              ))}
+            <div className="mt-6">
+              <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
+                Ou choisis le mini-jeu
+              </p>
+              <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                {MINI_GAMES.map((g) => (
+                  <button
+                    key={g.id}
+                    type="button"
+                    className="group relative overflow-hidden rounded-xl border border-border/70 bg-background/50 text-left transition-transform duration-300 hover:-translate-y-1 disabled:cursor-not-allowed disabled:opacity-45"
+                    disabled={participants.length < 2}
+                    onClick={() => start(g)}
+                  >
+                    <div className="relative aspect-video overflow-hidden">
+                      <img
+                        src={GAME_IMAGES[g.id]}
+                        alt={`Illustration du mini-jeu ${g.name}`}
+                        loading="lazy"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-background/25 to-transparent" />
+                      <span className="absolute right-2 top-2 rounded-full bg-background/75 px-2 py-0.5 font-mono text-[10px] uppercase tracking-widest backdrop-blur">
+                        {g.kind}
+                      </span>
+                    </div>
+                    <div className="px-3 pb-3 pt-2">
+                      <div className="truncate font-display text-base tracking-wide">{g.name}</div>
+                      <div className="truncate font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                        {g.durationMin}–{g.durationMax}s
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -225,11 +249,18 @@ function Arena() {
 
       {phase === "playing" && game && GameComponent && (
         <section className="mt-10">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-            <h1 className="text-4xl">
-              {game.emoji} {game.name}
-            </h1>
-            <span className="tag">{participants.length} participants</span>
+          <div className="panel relative mb-4 overflow-hidden p-0">
+            <img
+              src={GAME_IMAGES[game.id]}
+              alt=""
+              aria-hidden
+              className="h-28 w-full object-cover opacity-40 sm:h-36"
+            />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background via-background/60 to-transparent" />
+            <div className="absolute inset-0 flex flex-wrap items-center justify-between gap-2 px-5">
+              <h1 className="text-3xl sm:text-4xl glow-text">{game.name}</h1>
+              <span className="tag">{participants.length} participants</span>
+            </div>
           </div>
           <GameComponent players={participants} seed={seed} onFinish={finish} />
         </section>

@@ -1,32 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { MINI_GAMES } from "@/components/games/registry";
-import imgMarbleDrop from "@/assets/games/marble-drop.jpg";
-import imgBigSlide from "@/assets/games/big-slide.jpg";
-import imgSurvivalCircle from "@/assets/games/survival-circle.jpg";
-import imgTrainSwitch from "@/assets/games/train-switch.jpg";
-import imgHundredDoors from "@/assets/games/hundred-doors.jpg";
-import imgBombArena from "@/assets/games/bomb-arena.jpg";
-import imgTornado from "@/assets/games/tornado.jpg";
-import imgCoinDrop from "@/assets/games/coin-drop.jpg";
-import imgPlinko from "@/assets/games/plinko.jpg";
-import imgCourse from "@/assets/games/course.jpg";
-import imgCoffre from "@/assets/games/coffre.jpg";
-import imgExplosion from "@/assets/games/explosion.jpg";
-
-const GAME_IMAGES: Record<string, string> = {
-  "marble-drop": imgMarbleDrop,
-  "big-slide": imgBigSlide,
-  "survival-circle": imgSurvivalCircle,
-  "train-switch": imgTrainSwitch,
-  "100-doors": imgHundredDoors,
-  "bomb-arena": imgBombArena,
-  tornado: imgTornado,
-  "coin-drop": imgCoinDrop,
-  plinko: imgPlinko,
-  course: imgCourse,
-  coffre: imgCoffre,
-  explosion: imgExplosion,
-};
+import { GAME_IMAGES } from "@/components/games/images";
 
 export const Route = createFileRoute("/jeux")({
   head: () => ({

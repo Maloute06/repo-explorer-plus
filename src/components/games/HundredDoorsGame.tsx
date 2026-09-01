@@ -6,8 +6,8 @@ import {
   type MiniGameProps,
 } from "@/lib/game-utils";
 import { useClock, useFinishAt } from "@/lib/use-clock";
-import { Avatar } from "@/components/PlayerChip";
-import { CrowdNote } from "./CrowdNote";
+import { GameStage, Hud, Runner } from "./GameStage";
+import { imgHundredDoors } from "./images";
 
 const SHOWN = 10;
 const ROUND = 6.2;
@@ -51,19 +51,32 @@ export function HundredDoorsGame({ players, seed, onFinish }: MiniGameProps) {
   useFinishAt(t, sim.duration, () => onFinish(sim.ranking));
   const index = Math.min(Math.floor(t / ROUND), sim.rounds.length - 1);
   const round = sim.rounds[index]!;
-  const revealed = t - index * ROUND > 3.1;
+  const inRound = t - index * ROUND;
+  const revealed = inRound > 3.1;
 
   return (
-    <div className="panel p-4 sm:p-6">
-      <div className="mb-4 flex items-center justify-between">
-        <span className="tag">
-          Manche {index + 1} / {sim.rounds.length} · 1 porte sur 100
-        </span>
-        <span className="font-mono text-xs text-muted-foreground">
-          {revealed ? "Ouverture…" : "Choix instinctif"}
-        </span>
-      </div>
-      <div className="grid grid-cols-5 gap-2 sm:grid-cols-10">
+    <GameStage
+      image={imgHundredDoors}
+      title="100 Doors"
+      subtitle={`Manche ${index + 1} / ${sim.rounds.length} · une seule porte sauve`}
+      minHeight={300}
+      aspect="auto"
+      shake={revealed && inRound < 3.4}
+      status={
+        <>
+          <Hud tone="live">
+            {Object.keys(round.picks).length} devant les portes
+          </Hud>
+          <Hud tone={revealed ? "danger" : "muted"}>{revealed ? "Ouverture" : "Instinct"}</Hud>
+        </>
+      }
+      caption={
+        revealed && round.eliminated.length
+          ? `Piège : ${round.eliminated.length} éliminés. La porte ${round.safe + 1} menait plus loin.`
+          : "Aucune stratégie possible : juste l'instinct, ou la chance."
+      }
+    >
+      <div className="absolute inset-0 grid grid-cols-5 gap-2 overflow-y-auto p-3 sm:grid-cols-10">
         {Array.from({ length: SHOWN }).map((_, d) => {
           const names = Object.keys(round.picks).filter((n) => round.picks[n] === d);
           const isSafe = revealed && round.safe === d;
@@ -71,30 +84,28 @@ export function HundredDoorsGame({ players, seed, onFinish }: MiniGameProps) {
           return (
             <div
               key={d}
-              className="rounded-lg border border-border p-1.5"
+              className="rounded-lg border border-border/70 p-1.5 transition-colors"
               style={{
                 background: isSafe
-                  ? "oklch(0.633 0.079 115.2 / 28%)"
+                  ? "oklch(0.633 0.079 115.2 / 30%)"
                   : isTrap
-                    ? "oklch(0.577 0.245 27.3 / 22%)"
-                    : "oklch(0.164 0.016 210.9 / 70%)",
+                    ? "oklch(0.577 0.245 27.3 / 24%)"
+                    : "oklch(0.164 0.016 210.9 / 55%)",
+                boxShadow: isSafe ? "0 0 34px oklch(0.633 0.079 115.2 / 60%)" : undefined,
               }}
             >
-              <div className="text-center text-lg">{revealed ? (isSafe ? "✨" : "🚫") : "🚪"}</div>
+              <div className={`text-center text-lg ${isSafe ? "animate-pop" : ""}`}>
+                {revealed ? (isSafe ? "✨" : "🚫") : "🚪"}
+              </div>
               <div className="mt-1 flex flex-wrap justify-center gap-0.5">
                 {names.slice(0, 6).map((n) => (
-                  <Avatar key={n} name={n} size={16} dimmed={isTrap} />
+                  <Runner key={n} name={n} size={16} dead={isTrap} />
                 ))}
               </div>
             </div>
           );
         })}
       </div>
-      <CrowdNote total={players.length} shown={players.length}>
-        {revealed && round.eliminated.length
-          ? `Piège : ${round.eliminated.length} éliminés. La porte ${round.safe + 1} menait plus loin.`
-          : "Aucune stratégie : juste l'instinct, ou la chance."}
-      </CrowdNote>
-    </div>
+    </GameStage>
   );
 }
