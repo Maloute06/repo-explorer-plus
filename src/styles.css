@@ -73,14 +73,14 @@
     border-color: var(--color-border);
   }
 
-  body {
+  html {
     background-color: var(--color-background);
+  }
+
+  body {
+    background-color: transparent;
     color: var(--color-foreground);
     font-family: var(--font-sans);
-    background-image:
-      radial-gradient(60rem 40rem at 15% -10%, oklch(0.371 0.083 320 / 28%), transparent 70%),
-      radial-gradient(50rem 34rem at 95% 0%, oklch(0.525 0.069 118.7 / 24%), transparent 70%);
-    background-attachment: fixed;
   }
 
   h1,
@@ -354,3 +354,98 @@
     0 0 26px oklch(0.743 0.085 116.6 / 35%),
     inset 0 0 22px oklch(0.371 0.083 320 / 35%);
 }
+
+/* ---- Fond aurora réactif à la souris ---- */
+
+.aurora-root {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  --mx: 0.5;
+  --my: 0.4;
+}
+
+.aurora-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.85;
+  will-change: transform, translate, scale;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.aurora-blob-1 {
+  width: 62vw;
+  height: 62vw;
+  top: -18vw;
+  left: calc(-8vw + (var(--mx) * 12vw));
+  background: radial-gradient(circle, oklch(0.371 0.083 320 / 85%), transparent 68%);
+  transform: translate3d(calc((var(--mx) - 0.5) * -140px), calc((var(--my) - 0.5) * -120px), 0);
+  animation: dx-aurora-a 22s ease-in-out infinite alternate;
+}
+
+.aurora-blob-2 {
+  width: 54vw;
+  height: 54vw;
+  top: 8vh;
+  right: calc(-12vw + ((1 - var(--mx)) * 10vw));
+  background: radial-gradient(circle, oklch(0.525 0.069 118.7 / 70%), transparent 68%);
+  transform: translate3d(calc((var(--mx) - 0.5) * 150px), calc((var(--my) - 0.5) * 130px), 0);
+  animation: dx-aurora-b 28s ease-in-out infinite alternate;
+}
+
+.aurora-blob-3 {
+  width: 70vw;
+  height: 48vw;
+  bottom: -20vw;
+  left: calc(10vw + (var(--mx) * 14vw));
+  background: radial-gradient(circle, oklch(0.633 0.079 115.2 / 45%), transparent 70%);
+  transform: translate3d(calc((var(--mx) - 0.5) * -110px), calc((var(--my) - 0.5) * 110px), 0);
+  animation: dx-aurora-c 34s ease-in-out infinite alternate;
+}
+
+.aurora-noise {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    38rem 28rem at calc(var(--mx) * 100%) calc(var(--my) * 100%),
+    oklch(0.743 0.085 116.6 / 12%),
+    transparent 70%
+  );
+}
+
+@keyframes dx-aurora-a {
+  from {
+    translate: 0 0;
+    scale: 1;
+  }
+  to {
+    translate: 6vw 4vh;
+    scale: 1.15;
+  }
+}
+
+@keyframes dx-aurora-b {
+  from {
+    translate: 0 0;
+    scale: 1.1;
+  }
+  to {
+    translate: -7vw 6vh;
+    scale: 0.95;
+  }
+}
+
+@keyframes dx-aurora-c {
+  from {
+    translate: 0 0;
+    scale: 1.05;
+  }
+  to {
+    translate: 5vw -5vh;
+    scale: 1.2;
+  }
+}
+
